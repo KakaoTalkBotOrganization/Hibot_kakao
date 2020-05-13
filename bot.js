@@ -292,31 +292,21 @@ DatabaseWatcher.prototype = {
 										Log.d(obj.message);
 										let room = getRoomName(obj.chat_id);
 										Log.d(obj.v.origin);
-										if (obj.v.origin == "NEWMEM") {
-											Api.replyRoom(room, getUserInfo(obj.user_id, "name") + "님 안녕하세요! 공지에 있는 규칙 필독해주세요.");
-										}
-										if (obj.v.origin == "DELMEM") {
+										let send_username = getUserInfo(obj.user_id, "name");
+										if (obj.v.origin == "NEWMEM") 
+											Api.replyRoom(room, send_username + "님 안녕하세요! 공지에 있는 규칙 필독해주세요.");
+										else if (obj.v.origin == "DELMEM" && obj.message.get("feedType") == 2)
+											Api.replyRoom(room, send_username + "님 안녕히가세요!");
+										else if (obj.v.origin == "KICKMEM" || obj.v.origin == "DELMEM"){
 											obj.message = new JSONObject(obj.message);
-											if (obj.message.get("feedType") == 2) {
-												Api.replyRoom(room, getUserName(obj.user_id) + "님 안녕히가세요!");
-											}
-			
-											if (obj.message.get("feedType") == 6) {
-												Api.replyRoom(room, getUserInfo(obj.user_id, "name") + "님이 " + getUserInfo(obj.message.get("member").getString("userId"), "name") + "님을 강퇴하였습니다. 다음부턴 착하게 사세요!");
-											}
+											Api.replyRoom(room, send_username + "님이 " + getUserInfo(obj.message.get("member").getString("userId"), "name") + "님을 강퇴하였습니다. 다음부턴 착하게 사세요!");
 										}
-										if (obj.v.origin == "KICKMEM"){
-											obj.message = new JSONObject(obj.message);
-											Api.replyRoom(room, getUserInfo(obj.user_id, "name") + "님이 " + getUserInfo(obj.message.get("member").getString("userId"), "name") + "님을 강퇴하였습니다. 다음부턴 착하게 사세요!");
-										}
-										if (obj.type == 26) {
-											if (obj.message == "who") {
-												obj.attachment = new JSONObject(decrypt(obj.user_id, obj.v.enc, obj.attachment));
-												let userid = obj.attachment.getString("src_userId");
-												Api.replyRoom(room, "이름: "+getUserInfo(userid, "name")
-												+"\n프로필 사진: "+getUserInfo(userid, "original_profile_image_url")
-												+"\n상태 메시지: "+getUserInfo(userid, "status_message"));
-											}
+										else if (obj.type == 26 && obj.message == "who") {
+											obj.attachment = new JSONObject(decrypt(obj.user_id, obj.v.enc, obj.attachment));
+											let userid = obj.attachment.getString("src_userId");
+											Api.replyRoom(room, "이름: "+getUserInfo(userid, "name")
+											+"\n프로필 사진: "+getUserInfo(userid, "original_profile_image_url")
+											+"\n상태 메시지: "+getUserInfo(userid, "status_message"));
 										}
 									}
 								}
@@ -327,7 +317,6 @@ DatabaseWatcher.prototype = {
 					}
 				}
 			}), 0, 1000);
- 
 			return true;
 		}
 		return false;
@@ -348,15 +337,6 @@ watcher.start();
 function onStartCompile() {
 	watcher.stop();
 }
-/**
- * (string) room
- * (string) sender
- * (boolean) isGroupChat
- * (void) replier.reply(message)
- * (boolean) replier.reply(room, message, hideErrorToast = false) // 전송 성공시 true, 실패시 false 반환
- * (string) imageDB.getProfileBase64()
- * (string) packageName
- */
 function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
 	if(msg == "!bot-off")
 	{
@@ -365,8 +345,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		Api.off(scriptName);
 	}
 }
-
-//아래 4개의 메소드는 액티비티 화면을 수정할때 사용됩니다.
 function onCreate(savedInstanceState, activity) {
 }
 function onStart(activity) {}
