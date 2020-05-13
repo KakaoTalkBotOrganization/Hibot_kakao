@@ -5,6 +5,9 @@
 ## 설치방법
 bot.js에서 봇이름과 KEY값을 변경해 줍니다.그러고 나서 [메신저봇R](https://play.google.com/store/apps/details?id=com.xfl.msgbot)에 붙여넣어 주세요<br>
 msgbot.sh를 /bin폴더에 복사하고 권한을 777또는 실행에 모두 체크합니다
+## 추가예정
+### 공지읽기
+<code>/공지</code>라고하면 공지를 출력합니다.
 ## 자주하는 질문
 ### 컴파일이 안돼여ㅠㅠㅠ<br>
 -> 코드 제대로 복붙했는지 확인해주세요<br>
