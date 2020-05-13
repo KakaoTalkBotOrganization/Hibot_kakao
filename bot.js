@@ -171,61 +171,7 @@ function getRoomName(chat_id) {
 	}
 }
 
-function getUserName(user_id) {
-	try {
-		let cursor = db2.rawQuery("SELECT * FROM friends WHERE id=" + user_id, null);
-		cursor.moveToNext();
-		let data = {};
-		let columns = [
-			"_id",
-			"contact_id",
-			"id",
-			"type",
-			"uuid",
-			"phone_number",
-			"raw_phone_number",
-			"name",
-			"phonetic_name",
-			"profle_image_url",
-			"full_profile_image_url",
-			"original_profile_image_url",
-			"status_message",
-			"chat_id",
-			"brand_new",
-			"blocked",
-			"favorite",
-			"position",
-			"v",
-			"board_v",
-			"ext",
-			"nick_name",
-			"user_type",
-			"story_user_id",
-			"accout_id",
-			"linked_services",
-			"hidden",
-			"purged",
-			"suspended",
-			"member_type",
-			"involved_chat_ids",
-			"contact_name",
-			"enc",
-			"created_at",
-			"new_badge_updated_at",
-			"new_badge_seen_at",
-			"status_action_token"
-		];
-		for (let i = 0; i < columns.length; i ++) {
-			data[columns[i]] = cursor.getString(i);
-		}
-		cursor.close();
-		return decrypt(MY_KEY, data.enc, data.name);
-	} catch (e) {
-		Log.error(e.lineNumber+": "+e);
-		return null;
-	}
-}
-function getUserInfo(user_id, info) {//it doesn't work yet
+function getUserInfo(user_id, info) {
 	try {
 		let cursor = db2.rawQuery("SELECT * FROM friends WHERE id=" + user_id, null);
 		cursor.moveToNext();
@@ -371,7 +317,10 @@ DatabaseWatcher.prototype = {
 										if (obj.type == 26) {
 											if (obj.message == "who") {
 												obj.attachment = new JSONObject(decrypt(obj.user_id, obj.v.enc, obj.attachment));
-												Api.replyRoom(room, getUserName(obj.attachment.getString("src_userId")));
+												let userid = obj.attachment.getString("src_userId");
+												Api.replyRoom(room, "이름: "+getUserName(userid)\
+												+"\n프로필 사진: "+getUserInfo(userid, "original_profile_image_url")\
+												+"\n상태 메시지: "+getUserInfo(userid, "status_message"));
 											}
 										}
 									}
