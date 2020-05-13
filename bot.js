@@ -239,6 +239,10 @@ DatabaseWatcher.prototype = {
 			this.looper.scheduleAtFixedRate(new TimerTask({
 				run: function () {
 					try {
+						if(!Api.isOn(scriptName)){///봇이 안꺼지는 문제 해결
+							watcher.stop();
+							return;
+						}
 						if (initializeDB()) {
 							let count = DatabaseUtils.queryNumEntries(db, "chat_logs", null);
 							if (this.pre == null) {
@@ -293,12 +297,11 @@ DatabaseWatcher.prototype = {
 		}
 		return false;
 	},
- 
+
 	stop: function () {
 		if (this.looper != null) {
 			this.looper.cancel();
 			this.looper = null;
- 
 			return true;
 		}
 		return false;
@@ -322,16 +325,22 @@ function onStartCompile() {
  * (string) packageName
  */
 function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
+	if(msg == "!bot-off")
+	{
+		replier.reply(scriptName+"을(를) 종료합니다.");
+		watcher.stop();
+		Api.off(scriptName);
+	}
 }
 
 //아래 4개의 메소드는 액티비티 화면을 수정할때 사용됩니다.
 function onCreate(savedInstanceState, activity) {
 }
 
-function onStart(activity) {watcher.stop();}
+function onStart(activity) {}
 
 function onResume(activity) {}
 
-function onPause(activity) {watcher.stop();}
+function onPause(activity) {}
 
 function onStop(activity) {}
