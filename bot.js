@@ -37,11 +37,9 @@ let db2 = null;
 
 function toByteArray(bytes) {
 	let res = _Array.newInstance(_Byte.TYPE, bytes.length);
- 
 	for (var i = 0; i < bytes.length; i ++) {
 		res[i] = new _Integer(bytes[i]).byteValue();
 	}
- 
 	return res;
 }
 function toCharArray(chars) {
@@ -60,7 +58,7 @@ function decrypt(userId, enc, text) {
 		cipher.init(2, secretKeySpec, ivParameterSpec);
 		return String(new _String(cipher.doFinal(Base64.decode(text, 0)), "UTF-8"));
 	} catch (e) {
-	Log.error("Line 59: "+e);
+		Log.error(e.lineNumber+": "+e);
 		return null;
 	}
 }
@@ -81,7 +79,7 @@ function requestPermission() {
 		in1.close();
 		return true;
 	} catch (e) {
-		Log.error("Line 74: "+e);
+		Log.error(e.lineNumber+": "+e);
 		return false;
 	}
 }
@@ -105,7 +103,7 @@ function initializeDB() {
 			db2 = SQLiteDatabase.openDatabase(kakao2, null, 0);
 		return true;
 	} catch (e) {
-		Log.e("Line 92: "+e);
+		Log.error(e.lineNumber+": "+e);
 		requestPermission();
 		return false;
 	}
@@ -146,7 +144,7 @@ function getRecentChatData(count) {
 		cursor.close();
 		return data;
 	} catch (e) {
-		Log.error(e);
+		Log.error(e.lineNumber+": "+e);
 		return null;
 	}
 }
@@ -168,7 +166,7 @@ function getRoomName(chat_id) {
 		}
 		return room;
 	} catch (e) {
-		Log.error(e);
+		Log.error(e.lineNumber+": "+e);
 		return null;
 	}
 }
@@ -223,7 +221,100 @@ function getUserName(user_id) {
 		cursor.close();
 		return decrypt(MY_KEY, data.enc, data.name);
 	} catch (e) {
-		Log.error(e);
+		Log.error(e.lineNumber+": "+e);
+		return null;
+	}
+}
+function getUserInfo(user_id, info) {//it doesn't work yet
+	try {
+		let cursor = db2.rawQuery("SELECT * FROM friends WHERE id=" + user_id, null);
+		cursor.moveToNext();
+		let data = {};
+		let columns = [
+			"_id",
+			"contact_id",
+			"id",
+			"type",
+			"uuid",
+			"phone_number",
+			"raw_phone_number",
+			"name",
+			"phonetic_name",
+			"profle_image_url",
+			"full_profile_image_url",
+			"original_profile_image_url",
+			"status_message",
+			"chat_id",
+			"brand_new",
+			"blocked",
+			"favorite",
+			"position",
+			"v",
+			"board_v",
+			"ext",
+			"nick_name",
+			"user_type",
+			"story_user_id",
+			"accout_id",
+			"linked_services",
+			"hidden",
+			"purged",
+			"suspended",
+			"member_type",
+			"involved_chat_ids",
+			"contact_name",
+			"enc",
+			"created_at",
+			"new_badge_updated_at",
+			"new_badge_seen_at",
+			"status_action_token"
+		];
+		for (let i = 0; i < columns.length; i ++) {
+			data[columns[i]] = cursor.getString(i);
+		}
+		cursor.close();
+		switch(info){
+			case "_id": return data._id;
+			case "contact_id": return data.contact_id;
+			case "id": return data.id;
+			case "type": return data.type;
+			case "uuid": return data.uuid;
+			case "phone_number": return data.phone_number;
+			case "raw_phone_number": return data.raw_phone_number;
+			case "name": return data.name;
+			case "phonetic_name": return data.phonetic_name;
+			case "profle_image_url": return data.profle_image_url;
+			case "full_profile_image_url": return data.full_profile_image_url;
+			case "original_profile_image_url": return data.original_profile_image_url;
+			case "status_message": return data.status_message;
+			case "chat_id": return data.chat_id;
+			case "brand_new": return data.brand_new;
+			case "blocked": return data.blocked;
+			case "favorite": return data.favorite;
+			case "position": return data.position;
+			case "v": return data.v;
+			case "board_v": return data.board_v;
+			case "ext": return data.ext;
+			case "nick_name": return data.nick_name;
+			case "user_type": return data.user_type;
+			case "story_user_id": return data.story_user_id;
+			case "accout_id": return data.accout_id;
+			case "linked_services": return data.linked_services;
+			case "hidden": return data.hidden;
+			case "purged": return data.purged;
+			case "suspended": return data.suspended;
+			case "member_type": return data.member_type;
+			case "involved_chat_ids": return data.involved_chat_ids;
+			case "contact_name": return data.contact_name;
+			case "enc": return data.enc;
+			case "created_at": return data.created_at;
+			case "new_badge_updated_at": return data.new_badge_updated_at;
+			case "new_badge_seen_at": return data.new_badge_seen_at;
+			case "status_action_token": return data.status_action_token;
+			default: throw "requsted Unknown info";
+		}
+	} catch (e) {
+		Log.error(e.lineNumber+": "+e);
 		return null;
 	}
 }
@@ -246,7 +337,7 @@ DatabaseWatcher.prototype = {
 						if (initializeDB()) {
 							let count = DatabaseUtils.queryNumEntries(db, "chat_logs", null);
 							if (this.pre == null) {
-							  Log.d("first execute");
+								Log.d("first execute");
 								this.pre = count;
 							} else {
 								let change = count - this.pre;
@@ -288,7 +379,7 @@ DatabaseWatcher.prototype = {
 							}
 						}
 					} catch (e) {
-						Log.error(e);
+						Log.error(e.lineNumber+": "+e);
 					}
 				}
 			}), 0, 1000);
