@@ -62,7 +62,6 @@ function decrypt(userId, enc, text) {
 		return null;
 	}
 }
- 
 function requestPermission() {
 	try {
 		var cmd = new ArrayList();
@@ -83,7 +82,6 @@ function requestPermission() {
 		return false;
 	}
 }
- 
 function initializeDB() {
 	requestPermission();
 	try {
@@ -108,7 +106,6 @@ function initializeDB() {
 		return false;
 	}
 }
- 
 function getRecentChatData(count) {
 	try {
 		let cursor = db.rawQuery("SELECT * FROM chat_logs", null);
@@ -148,7 +145,6 @@ function getRecentChatData(count) {
 		return null;
 	}
 }
-
 function getRoomName(chat_id) {
 	try {
 		let room = "";
@@ -171,61 +167,7 @@ function getRoomName(chat_id) {
 	}
 }
 
-function getUserName(user_id) {
-	try {
-		let cursor = db2.rawQuery("SELECT * FROM friends WHERE id=" + user_id, null);
-		cursor.moveToNext();
-		let data = {};
-		let columns = [
-			"_id",
-			"contact_id",
-			"id",
-			"type",
-			"uuid",
-			"phone_number",
-			"raw_phone_number",
-			"name",
-			"phonetic_name",
-			"profle_image_url",
-			"full_profile_image_url",
-			"original_profile_image_url",
-			"status_message",
-			"chat_id",
-			"brand_new",
-			"blocked",
-			"favorite",
-			"position",
-			"v",
-			"board_v",
-			"ext",
-			"nick_name",
-			"user_type",
-			"story_user_id",
-			"accout_id",
-			"linked_services",
-			"hidden",
-			"purged",
-			"suspended",
-			"member_type",
-			"involved_chat_ids",
-			"contact_name",
-			"enc",
-			"created_at",
-			"new_badge_updated_at",
-			"new_badge_seen_at",
-			"status_action_token"
-		];
-		for (let i = 0; i < columns.length; i ++) {
-			data[columns[i]] = cursor.getString(i);
-		}
-		cursor.close();
-		return decrypt(MY_KEY, data.enc, data.name);
-	} catch (e) {
-		Log.error(e.lineNumber+": "+e);
-		return null;
-	}
-}
-function getUserInfo(user_id, info) {//it doesn't work yet
+function getUserInfo(user_id, info) {
 	try {
 		let cursor = db2.rawQuery("SELECT * FROM friends WHERE id=" + user_id, null);
 		cursor.moveToNext();
@@ -281,18 +223,18 @@ function getUserInfo(user_id, info) {//it doesn't work yet
 			case "uuid": return data.uuid;
 			case "phone_number": return data.phone_number;
 			case "raw_phone_number": return data.raw_phone_number;
-			case "name": return data.name;
+			case "name": return decrypt(MY_KEY, data.enc, data.name);
 			case "phonetic_name": return data.phonetic_name;
-			case "profle_image_url": return data.profle_image_url;
-			case "full_profile_image_url": return data.full_profile_image_url;
-			case "original_profile_image_url": return data.original_profile_image_url;
-			case "status_message": return data.status_message;
+			case "profle_image_url": return decrypt(MY_KEY, data.enc, data.profle_image_url);
+			case "full_profile_image_url": return decrypt(MY_KEY, data.enc, data.full_profile_image_url);
+			case "original_profile_image_url": return decrypt(MY_KEY, data.enc, data.original_profile_image_url);
+			case "status_message": return decrypt(MY_KEY, data.enc, data.status_message);
 			case "chat_id": return data.chat_id;
 			case "brand_new": return data.brand_new;
 			case "blocked": return data.blocked;
 			case "favorite": return data.favorite;
 			case "position": return data.position;
-			case "v": return data.v;
+			case "v": return decrypt(MY_KEY, data.enc, data.v);
 			case "board_v": return data.board_v;
 			case "ext": return data.ext;
 			case "nick_name": return data.nick_name;
@@ -305,7 +247,7 @@ function getUserInfo(user_id, info) {//it doesn't work yet
 			case "suspended": return data.suspended;
 			case "member_type": return data.member_type;
 			case "involved_chat_ids": return data.involved_chat_ids;
-			case "contact_name": return data.contact_name;
+			case "contact_name": return decrypt(MY_KEY, data.enc, data.contact_name);
 			case "enc": return data.enc;
 			case "created_at": return data.created_at;
 			case "new_badge_updated_at": return data.new_badge_updated_at;
@@ -351,27 +293,29 @@ DatabaseWatcher.prototype = {
 										let room = getRoomName(obj.chat_id);
 										Log.d(obj.v.origin);
 										if (obj.v.origin == "NEWMEM") {
-											Api.replyRoom(room, getUserName(obj.user_id) + "님 안녕하세요! 공지에 있는 규칙 필독해주세요.");
+											Api.replyRoom(room, getUserInfo(obj.user_id, "name") + "님 안녕하세요! 공지에 있는 규칙 필독해주세요.");
 										}
 										if (obj.v.origin == "DELMEM") {
 											obj.message = new JSONObject(obj.message);
- 
 											if (obj.message.get("feedType") == 2) {
 												Api.replyRoom(room, getUserName(obj.user_id) + "님 안녕히가세요!");
 											}
 			
 											if (obj.message.get("feedType") == 6) {
-												Api.replyRoom(room, getUserName(obj.user_id) + "님이 " + getUserName(obj.message.get("member").getString("userId")) + "님을 강퇴하였습니다. 다음부턴 착하게 사세요!");
+												Api.replyRoom(room, getUserInfo(obj.user_id, "name") + "님이 " + getUserInfo(obj.message.get("member").getString("userId"), "name") + "님을 강퇴하였습니다. 다음부턴 착하게 사세요!");
 											}
 										}
 										if (obj.v.origin == "KICKMEM"){
 											obj.message = new JSONObject(obj.message);
-											Api.replyRoom(room, getUserName(obj.user_id) + "님이 " + getUserName(obj.message.get("member").getString("userId")) + "님을 강퇴하였습니다. 다음부턴 착하게 사세요!");
+											Api.replyRoom(room, getUserInfo(obj.user_id, "name") + "님이 " + getUserInfo(obj.message.get("member").getString("userId"), "name") + "님을 강퇴하였습니다. 다음부턴 착하게 사세요!");
 										}
 										if (obj.type == 26) {
 											if (obj.message == "who") {
 												obj.attachment = new JSONObject(decrypt(obj.user_id, obj.v.enc, obj.attachment));
-												Api.replyRoom(room, getUserName(obj.attachment.getString("src_userId")));
+												let userid = obj.attachment.getString("src_userId");
+												Api.replyRoom(room, "이름: "+getUserInfo(userid, "name")\
+												+"\n프로필 사진: "+getUserInfo(userid, "original_profile_image_url")\
+												+"\n상태 메시지: "+getUserInfo(userid, "status_message"));
 											}
 										}
 									}
@@ -388,7 +332,6 @@ DatabaseWatcher.prototype = {
 		}
 		return false;
 	},
-
 	stop: function () {
 		if (this.looper != null) {
 			this.looper.cancel();
@@ -398,7 +341,6 @@ DatabaseWatcher.prototype = {
 		return false;
 	}
 };
-
 let watcher = new DatabaseWatcher();
 watcher.start();
 //Api.replyRoom("Test", "Start");
@@ -427,11 +369,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 //아래 4개의 메소드는 액티비티 화면을 수정할때 사용됩니다.
 function onCreate(savedInstanceState, activity) {
 }
-
 function onStart(activity) {}
-
 function onResume(activity) {}
-
 function onPause(activity) {}
-
 function onStop(activity) {}
