@@ -275,12 +275,11 @@ DatabaseWatcher.prototype = {
 										}
 										if (obj.type == 26) {
 											if (obj.message == "who") {
-												obj.attachment = new JSONObject(obj.attachment);
+												obj.attachment = new JSONObject(decrypt(obj.user_id, obj.v.enc, obj.attachment));
 												Api.replyRoom(room, getUserName(obj.attachment.getString("src_linkId")));
 											}
 										}
 									}
-									
 								}
 							}
 						}
@@ -305,11 +304,11 @@ DatabaseWatcher.prototype = {
 		return false;
 	}
 };
- 
+
 let watcher = new DatabaseWatcher();
 watcher.start();
 //Api.replyRoom("Test", "Start");
- 
+
 function onStartCompile() {
 	watcher.stop();
 }
