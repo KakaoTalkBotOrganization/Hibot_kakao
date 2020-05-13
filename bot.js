@@ -280,7 +280,7 @@ DatabaseWatcher.prototype = {
 										if (obj.type == 26) {
 											if (obj.message == "who") {
 												obj.attachment = new JSONObject(decrypt(obj.user_id, obj.v.enc, obj.attachment));
-												Api.replyRoom(room, getUserName(obj.attachment.getString("src_linkId")));
+												Api.replyRoom(room, getUserName(obj.attachment.getString("src_userId")));
 											}
 										}
 									}
