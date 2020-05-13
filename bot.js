@@ -284,16 +284,16 @@ DatabaseWatcher.prototype = {
 							} else {
 								let change = count - this.pre;
 								this.pre = count;
-								if (change > 0) {
+								if (change > 0) {//if something changed
 									let stack = getRecentChatData(change);
 									while (stack.length > 0) {
 										let obj = stack.pop();
+										if(obj.v.origin == "MSG") return;
 										obj.message = decrypt(obj.user_id, obj.v.enc, obj.message);
 										Log.d(obj.message);
 										let room = getRoomName(obj.chat_id);
-										Log.d(obj.v.origin);
 										let send_username = getUserInfo(obj.user_id, "name");
-										if (obj.v.origin == "NEWMEM") 
+										if (obj.v.origin == "NEWMEM")
 											Api.replyRoom(room, send_username + "님 안녕하세요! 공지에 있는 규칙 필독해주세요.");
 										else if (obj.v.origin == "DELMEM" && obj.message.get("feedType") == 2)
 											Api.replyRoom(room, send_username + "님 안녕히가세요!");
