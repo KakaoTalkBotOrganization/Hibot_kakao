@@ -1,14 +1,14 @@
-const scriptName = "테스트";//BotName
+const scriptName = "Hibot";//BotName
 const Context = android.content.Context;
 const SQLiteDatabase = android.database.sqlite.SQLiteDatabase;
 const DatabaseUtils = android.database.DatabaseUtils;
 const PowerManager = android.os.PowerManager;
 const Base64 = android.util.Base64;
-const ProcessBuilder =  java.lang.ProcessBuilder;
-const Process =  java.lang.Process;
-const InputStreamReader =  java.io.InputStreamReader;
-const OutputStreamReader =  java.io.OutputStreamReader;
-const BufferedReader =  java.io.BufferedReader;
+const ProcessBuilder = java.lang.ProcessBuilder;
+const Process = java.lang.Process;
+const InputStreamReader = java.io.InputStreamReader;
+const OutputStreamReader = java.io.OutputStreamReader;
+const BufferedReader = java.io.BufferedReader;
 const ArrayList = java.util.ArrayList;
 const _Array = java.lang.reflect.Array;
 const _Byte = java.lang.Byte;
@@ -29,7 +29,7 @@ const JSONObject = org.json.JSONObject;
 const MY_KEY = "298920935";//KakaoTalk2.db->open_profile->user_id
 
 let pm = Api.getContext().getSystemService(Context.POWER_SERVICE);
-let wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "DBBot");
+let wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, scriptName);
 wakeLock.acquire();
 
 let db = null;
@@ -43,11 +43,10 @@ function toByteArray(bytes) {
 	}
  
 	return res;
-};
-
+}
 function toCharArray(chars) {
 	return new _String(chars.map((e) => String.fromCharCode(e)).join("")).toCharArray();
-};
+}
 
 function decrypt(userId, enc, text) {
 	try {
@@ -59,13 +58,12 @@ function decrypt(userId, enc, text) {
 		let ivParameterSpec = new IvParameterSpec(iv);
 		let cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
 		cipher.init(2, secretKeySpec, ivParameterSpec);
- 
 		return String(new _String(cipher.doFinal(Base64.decode(text, 0)), "UTF-8"));
 	} catch (e) {
 	Log.error("Line 59: "+e);
 		return null;
 	}
-};
+}
  
 function requestPermission() {
 	try {
@@ -86,7 +84,7 @@ function requestPermission() {
 		Log.error("Line 74: "+e);
 		return false;
 	}
-};
+}
  
 function initializeDB() {
 	requestPermission();
@@ -111,7 +109,7 @@ function initializeDB() {
 		requestPermission();
 		return false;
 	}
-};
+}
  
 function getRecentChatData(count) {
 	try {
@@ -138,7 +136,6 @@ function getRecentChatData(count) {
 			];
 			for (let i = 0; i < columns.length; i ++) {
 				obj[columns[i]] = cursor.getString(i);
-	
 				if (columns[i] == "v") {
 					obj.v = JSON.parse(obj.v);
 				}
@@ -152,8 +149,8 @@ function getRecentChatData(count) {
 		Log.error(e);
 		return null;
 	}
-};
- 
+}
+
 function getRoomName(chat_id) {
 	try {
 		let room = "";
@@ -174,8 +171,8 @@ function getRoomName(chat_id) {
 		Log.error(e);
 		return null;
 	}
-};
- 
+}
+
 function getUserName(user_id) {
 	try {
 		let cursor = db2.rawQuery("SELECT * FROM friends WHERE id=" + user_id, null);
@@ -220,29 +217,24 @@ function getUserName(user_id) {
 			"new_badge_seen_at",
 			"status_action_token"
 		];
- 
 		for (let i = 0; i < columns.length; i ++) {
 			data[columns[i]] = cursor.getString(i);
 		}
- 
 		cursor.close();
-		
 		return decrypt(MY_KEY, data.enc, data.name);
 	} catch (e) {
 		Log.error(e);
 		return null;
 	}
-};
- 
+}
 function DatabaseWatcher() {
 	this.looper = null;
 	this.pre = null;
-};
- 
+}
 DatabaseWatcher.prototype = {
 	start: function () {
 		if (this.looper == null) {
-		Log.debug("looper is null");
+			Log.debug("looper is null");
 			this.looper = new Timer();
 			this.looper.scheduleAtFixedRate(new TimerTask({
 				run: function () {
@@ -262,7 +254,7 @@ DatabaseWatcher.prototype = {
 										obj.message = decrypt(obj.user_id, obj.v.enc, obj.message);
 										Log.d(obj.message);
 										let room = getRoomName(obj.chat_id);
-									   Log.d(obj.v.origin);
+										Log.d(obj.v.origin);
 										if (obj.v.origin == "NEWMEM") {
 											Api.replyRoom(room, getUserName(obj.user_id) + "님 안녕하세요! 공지에 있는 규칙 필독해주세요.");
 										}
@@ -320,7 +312,7 @@ watcher.start();
  
 function onStartCompile() {
 	watcher.stop();
-};
+}
 /**
  * (string) room
  * (string) sender
