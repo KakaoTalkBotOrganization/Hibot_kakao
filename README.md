@@ -6,7 +6,7 @@
 bot.js에서 봇이름과 KEY값을 변경해 줍니다.그러고 나서 [메신저봇R](https://play.google.com/store/apps/details?id=com.xfl.msgbot)에 붙여넣어 주세요<br>
 msgbot.sh를 /bin폴더에 복사하고 권한을 777또는 실행에 모두 체크합니다<br/>
 ## 추가예정
-추가예정인 것들
+추가예정인 것들<br>
 ### 공지읽기
 <code>/공지</code>라고하면 공지를 출력합니다.<br>
 ## 자주하는 질문
