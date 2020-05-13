@@ -298,7 +298,7 @@ DatabaseWatcher.prototype = {
 										else send_username = send_username + "님 ";
 										if (obj.v.origin == "NEWMEM")
 											Api.replyRoom(room, send_username + "안녕하세요! 공지에 있는 규칙 필독해주세요.");
-										else if (obj.v.origin == "DELMEM" && obj.message.get("feedType") == 2)
+										else if (obj.v.origin == "DELMEM" && JSONObject(obj.message).get("feedType") == 2)
 											Api.replyRoom(room, send_username + "안녕히가세요!");
 										else if (obj.v.origin == "KICKMEM" || obj.v.origin == "DELMEM"){
 											obj.message = new JSONObject(obj.message);
