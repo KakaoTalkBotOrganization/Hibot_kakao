@@ -313,8 +313,8 @@ DatabaseWatcher.prototype = {
 											if (obj.message == "who") {
 												obj.attachment = new JSONObject(decrypt(obj.user_id, obj.v.enc, obj.attachment));
 												let userid = obj.attachment.getString("src_userId");
-												Api.replyRoom(room, "이름: "+getUserInfo(userid, "name")\
-												+"\n프로필 사진: "+getUserInfo(userid, "original_profile_image_url")\
+												Api.replyRoom(room, "이름: "+getUserInfo(userid, "name")
+												+"\n프로필 사진: "+getUserInfo(userid, "original_profile_image_url")
 												+"\n상태 메시지: "+getUserInfo(userid, "status_message"));
 											}
 										}
