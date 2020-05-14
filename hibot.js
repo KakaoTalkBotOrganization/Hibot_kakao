@@ -288,7 +288,6 @@ DatabaseWatcher.prototype = {
 									let stack = getRecentChatData(change);
 									while (stack.length > 0) {
 										let obj = stack.pop();
-										if(obj.v.origin == "MSG") return;
 										obj.message = decrypt(obj.user_id, obj.v.enc, obj.message);
 										Log.d(obj.message);
 										let room = getRoomName(obj.chat_id);
