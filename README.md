@@ -1,7 +1,7 @@
 # Hibot_kakao
 입퇴장 등등을 알려주는 봇 입니다<br>
 원본 소스는[여기](https://cafe.naver.com/nameyee/14642)를 참고해주세요<br>
-<b>제가 만든게 절대 아닙니다</b>
+<b>절대 제가 만든게 아닙니다</b>
 ## 설치방법
 bot.js에서 봇이름과 KEY값을 변경해 줍니다.그러고 나서 [메신저봇R](https://play.google.com/store/apps/details?id=com.xfl.msgbot)에 붙여넣어 주세요<br>
 msgbot.sh를 /bin폴더에 복사하고 권한을 777또는 실행에 모두 체크합니다<br/>
