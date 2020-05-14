@@ -316,7 +316,7 @@ DatabaseWatcher.prototype = {
 										}
 										else if (obj.type == 26 && obj.message == "photolink") {
 											obj.attachment = new JSONObject(decrypt(obj.user_id, obj.v.enc, obj.attachment));
-											/*if(obj.attachment.src_type != 2)
+											/*if(obj.attachment.get("src_type") != 2)
 											{
 												Api.replyRoom(room, "사진이 아닙니다!");
 												return;
