@@ -288,7 +288,6 @@ DatabaseWatcher.prototype = {
 									let stack = getRecentChatData(change);
 									while (stack.length > 0) {
 										let obj = stack.pop();
-										if(obj.v.origin == "MSG") return;
 										obj.message = decrypt(obj.user_id, obj.v.enc, obj.message);
 										Log.d(obj.message);
 										let room = getRoomName(obj.chat_id);
@@ -314,6 +313,22 @@ DatabaseWatcher.prototype = {
 											Api.replyRoom(room, "이름: "+getUserInfo(userid, "name")
 											+"\n프로필 사진: "+getUserInfo(userid, "original_profile_image_url")
 											+"\n상태 메시지: "+getUserInfo(userid, "status_message"));
+										}
+										else if (obj.type == 26 && obj.message == "photolink") {
+											obj.attachment = new JSONObject(decrypt(obj.user_id, obj.v.enc, obj.attachment));
+											/*if(obj.attachment.get("src_type") != 2)
+											{
+												Api.replyRoom(room, "사진이 아닙니다!");
+												return;
+											}*/
+											let chat_id = obj.attachment.get("src_logId");
+											let cursor = db.rawQuery("SELECT * FROM chat_logs WHERE id=" + chat_id, null);
+											cursor.moveToNext();
+											let userId1=cursor.getString(4), msg1=cursor.getString(6);
+											cursor.close();
+											let photo = decrypt(userId1, getUserInfo(userId1, "enc"), msg1);
+											photo = new JSONObject(photo);
+											Api.replyRoom(room, "링크: "+photo.get("url"));
 										}
 									}
 								}
