@@ -324,9 +324,9 @@ DatabaseWatcher.prototype = {
 											let chat_id = obj.attachment.get("src_logId");
 											let cursor = db.rawQuery("SELECT * FROM chat_logs WHERE id=" + chat_id, null);
 											cursor.moveToNext();
-											let userId1=cursor.getString(5), msg1=cursor.getString(4);
+											let userId1=cursor.getString(4), msg1=cursor.getString(6);
 											cursor.close();
-											let photo = decrypt(userId1, getUserInfo(decrypt(obj.user_id, obj.v.enc, userId1), "enc"), msg1);
+											let photo = decrypt(userId1, getUserInfo(userId1, "enc"), msg1);
 											photo = new JSONObject(photo);
 											Api.replyRoom(room, "링크: "+photo.get("url"));
 										}
