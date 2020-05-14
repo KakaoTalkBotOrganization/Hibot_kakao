@@ -4,7 +4,7 @@
 <b>절대 제가 만든게 아닙니다</b>
 ## 설치방법
 bot.js에서 봇이름과 KEY값을 변경해 줍니다.그러고 나서 [메신저봇R](https://play.google.com/store/apps/details?id=com.xfl.msgbot)에 붙여넣어 주세요<br>
-msgbot.sh를 /bin폴더에 복사하고 권한을 777또는 실행에 모두 체크합니다<br/>
+msgbot.sh를 /bin/폴더에 복사하고 권한을 777또는 실행에 모두 체크합니다<br/>
 ## 추가예정
 추가예정인 것들<br>
 ### 공지읽기
@@ -16,7 +16,7 @@ msgbot.sh를 /bin폴더에 복사하고 권한을 777또는 실행에 모두 체
 #### msgbot.sh파일도 /bin폴더에 정상적으로 있어요!<br>
 -> [여기](https://play.google.com/store/apps/details?id=jackpal.androidterm&hl=ko)에서 msgbot.sh라고 쳐보세요<br>
 ##### "/system/bin/sh : msgbot.sh : not found"라고 떠요!<br>
--> /bin/msgbot.sh를 /system/bin폴더로 옮겨보세요<br>
+-> /bin/msgbot.sh를 /system/bin/폴더로 옮겨보세요<br>
 ##### "/system/bin/sh : msgbot.sh : can't execute: Permission denied"라는데요?<br>
 -> 권한 설정 하셔야죠...<br>
 ### msgbot.sh파일이 뭐죠?어떻게 만들죠?<br>
@@ -28,4 +28,4 @@ msgbot.sh를 /bin폴더에 복사하고 권한을 777또는 실행에 모두 체
 ### 응답을 안하거나 응답이 느려요ㅠㅜ<br>
 -> 카톡 저장 메모리가 꽉차면 DB 업데이트를 해요. 한번 활동이 왕성한 아무 오픈쳇팅방에 들어가봐요<br>
 ### "null님 안녕하세요! 공지에 있는 규칙 필독해주세요."같은 이상한 메시지가 떠요<br>
--> 어...db오류인데 속도가 너무느려서 이전 Thread가 끝나지 못하고 db를 읽고있는데 다음 thread가 작동하면 그럴지도?(정확한 원인은 분석중 입니다!)<br>
+-> 어... db오류인데 속도가 너무느려서 이전 Thread가 끝나지 못하고 db를 읽고있는데 다음 thread가 작동하면 그럴지도?(정확한 원인은 분석중 입니다!)<br>
