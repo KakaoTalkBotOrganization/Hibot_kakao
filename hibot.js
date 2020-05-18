@@ -1,4 +1,4 @@
-const scriptName = "Hibot";//BotName
+const scriptName = "Hibot";//BotName(반드시 바꿔주세요!)
 const Context = android.content.Context;
 const SQLiteDatabase = android.database.sqlite.SQLiteDatabase;
 const DatabaseUtils = android.database.DatabaseUtils;
@@ -26,11 +26,11 @@ const SecretKeySpec = javax.crypto.spec.SecretKeySpec;
 
 const JSONObject = org.json.JSONObject;
 
-const MY_KEY = "298920935";//KakaoTalk2.db->open_profile->user_id
-
-let pm = Api.getContext().getSystemService(Context.POWER_SERVICE);
-let wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, scriptName);
-wakeLock.acquire();
+const MY_KEY = "298920935";//KakaoTalk2.db->open_profile->user_id(반드시 바꿔주세요!)
+const Loading_cycle = 1000;//불러오는 주기 ms단위(1초=1000ms)
+var powerManager = Api.getContext().getSystemService(Context.POWER_SERVICE);
+var wakelock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, scriptName);
+wakelock.acquire();//wakelock걸어버리깃!
 
 let db = null;
 let db2 = null;
@@ -62,7 +62,7 @@ function decrypt(userId, enc, text) {
 		return null;
 	}
 }
-function requestPermission() {
+function copy_DB() {
 	try {
 		var cmd = new ArrayList();
 		cmd.add("msgbot.sh");
@@ -82,27 +82,17 @@ function requestPermission() {
 		return false;
 	}
 }
-function initializeDB() {
-	requestPermission();
+function connect_DB() {
+	DB_copy();
 	try {
 		var kakao1="/storage/emulated/0/KakaoTalk.db", kakao2="/storage/emulated/0/KakaoTalk2.db";
-		if (db != null && db2 != null) {
-			db.close();
-			db2.close();
-		}
-		if(!FileStream.read(kakao1))
-			Log.error(kakao1+":No such file or directory");
-		else
-			db = SQLiteDatabase.openDatabase(kakao1, null, 0);
-
-		if(!FileStream.read(kakao2))
-			Log.error(kakao2+":No such file or directory");
-		else
-			db2 = SQLiteDatabase.openDatabase(kakao2, null, 0);
+		if(db != null) db.close();
+		if(db2 != null) db2.close();
+		db = SQLiteDatabase.openDatabase(kakao1, null, 0);
+		db2 = SQLiteDatabase.openDatabase(kakao2, null, 0);
 		return true;
 	} catch (e) {
 		Log.error(e.lineNumber+": "+e);
-		requestPermission();
 		return false;
 	}
 }
@@ -276,7 +266,7 @@ DatabaseWatcher.prototype = {
 							watcher.stop();
 							return;
 						}
-						if (initializeDB()) {
+						if (connect_DB()) {
 							let count = DatabaseUtils.queryNumEntries(db, "chat_logs", null);
 							if (this.pre == null) {
 								Log.d("first execute");
@@ -316,11 +306,11 @@ DatabaseWatcher.prototype = {
 										}
 										else if (obj.type == 26 && obj.message == "photolink") {
 											obj.attachment = new JSONObject(decrypt(obj.user_id, obj.v.enc, obj.attachment));
-											/*if(obj.attachment.get("src_type") != 2)
+											if(obj.attachment.get("src_type") != 2)
 											{
 												Api.replyRoom(room, "사진이 아닙니다!");
 												return;
-											}*/
+											}
 											let chat_id = obj.attachment.get("src_logId");
 											let cursor = db.rawQuery("SELECT * FROM chat_logs WHERE id=" + chat_id, null);
 											cursor.moveToNext();
@@ -338,13 +328,14 @@ DatabaseWatcher.prototype = {
 						Log.error(e.lineNumber+": "+e);
 					}
 				}
-			}), 0, 1000);
+			}), 0, Loading_cycle);
 			return true;
 		}
 		return false;
 	},
 	stop: function () {
 		if (this.looper != null) {
+			wakelock.release()//wake lock 풀어버리깃!
 			this.looper.cancel();
 			this.looper = null;
 			return true;
@@ -359,11 +350,15 @@ function onStartCompile() {
 	watcher.stop();
 }
 function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
-	if(msg == "!bot-off")
+	if(msg == "!"+scriptName+"-off")
 	{
 		replier.reply(scriptName+"을(를) 종료합니다.");
 		watcher.stop();
 		Api.off(scriptName);
+	}
+	else if(msg == "!bot-reply-test")
+	{
+		replier.reply("can reply");
 	}
 }
 function onCreate(savedInstanceState, activity) {
