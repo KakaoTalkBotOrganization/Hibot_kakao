@@ -1,4 +1,5 @@
 # Hibot_kakao
+<strong>메신저 봇 에뮬레이터의 DB기능이 완성될 때 까지 업데이트를 하지 않겠습니다!</strong><br>
 입퇴장 등등을 알려주는 봇 입니다<br>
 원본 소스는[여기](https://cafe.naver.com/nameyee/14642)를 참고해주세요<br>
 <b>절대 제가 만든게 아닙니다</b>
