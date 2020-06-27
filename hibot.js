@@ -307,13 +307,13 @@ DatabaseWatcher.prototype = {
 											if(by == "" && send_username == "") Api.replyRoom(room, "다음부턴 착하게 사세요!");
 											else Api.replyRoom(room, send_username + by + "강퇴하였습니다. 다음부턴 착하게 사세요!");
 										}
-										else if (obj.type == 26 && obj.message == "who") {
+										/*else if (obj.type == 26 && obj.message == "who") {
 											obj.attachment = new JSONObject(decrypt(obj.user_id, obj.v.enc, obj.attachment));
 											let userid = obj.attachment.getString("src_userId");
 											Api.replyRoom(room, "이름: "+getUserInfo(userid, "name")
 											+"\n프로필 사진: "+getUserInfo(userid, "original_profile_image_url")
 											+"\n상태 메시지: "+getUserInfo(userid, "status_message"));
-										}
+										}*/
 										else if (obj.type == 26 && obj.message == "photolink") {
 											obj.attachment = new JSONObject(decrypt(obj.user_id, obj.v.enc, obj.attachment));
 											/*if(obj.attachment.get("src_type") != 2)
