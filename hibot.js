@@ -292,9 +292,9 @@ DatabaseWatcher.prototype = {
 										Log.d(obj.message);
 										let room = getRoomName(obj.chat_id);
 										let send_username = getUserInfo(obj.user_id, "name");
-										if(send_username == null) send_username = "";
-										else if(obj.v.origin == "KICKMEM") send_username = send_username + "님이 ";
-										else send_username = send_username + "님 ";
+										/*if(send_username == null) */send_username = "";
+										//else if(obj.v.origin == "KICKMEM") send_username = send_username + "님이 ";
+										//else send_username = send_username + "님 ";
 										if (obj.v.origin == "NEWMEM")
 											Api.replyRoom(room, send_username + "안녕하세요! 공지에 있는 규칙 필독해주세요.");
 										else if (obj.v.origin == "DELMEM" && JSONObject(obj.message).get("feedType") == 2)
@@ -302,8 +302,8 @@ DatabaseWatcher.prototype = {
 										else if (obj.v.origin == "KICKMEM" || obj.v.origin == "DELMEM"){
 											obj.message = new JSONObject(obj.message);
 											let by = getUserInfo(obj.message.get("member").getString("userId"), "name");
-											if(by == null) by = "";
-											else by = by + "님을 ";
+											/*if(by == null) */by = "";
+											//else by = by + "님을 ";
 											if(by == "" && send_username == "") Api.replyRoom(room, "다음부턴 착하게 사세요!");
 											else Api.replyRoom(room, send_username + by + "강퇴하였습니다. 다음부턴 착하게 사세요!");
 										}
