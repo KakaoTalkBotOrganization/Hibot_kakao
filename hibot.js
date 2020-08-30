@@ -18,22 +18,35 @@ const _String = java.lang.String;
 const Timer = java.util.Timer;
 const TimerTask = java.util.TimerTask;
 const Cipher = javax.crypto.Cipher;
+const File = java.io.File;
 const IvParameterSpec = javax.crypto.spec.IvParameterSpec;
+const JSONObject = org.json.JSONObject;
 const System = java.lang.System;
 const PBEKeySpec = javax.crypto.spec.PBEKeySpec;
 const SecretKeyFactory = javax.crypto.SecretKeyFactory;
 const SecretKeySpec = javax.crypto.spec.SecretKeySpec;
-
-const JSONObject = org.json.JSONObject;
-const package = "com.kakao.talk"//DB를 읽을 패키지 명
-const MY_KEY = "298920935";//KakaoTalk2.db->open_profile->user_id(반드시 바꿔주세요!)
-const Loading_cycle = 1000;//불러오는 주기 ms단위(1초=1000ms)
+const KTPackage = "com.kakao.talb";//DB를 읽을 카카오톡 패키지 명
+const BotPackage = "com.xfl.msgbot";//봇 앱 패키지 명
+const MY_KEY = "337865251";
+const Loading_cycle = 1000;//불러오는 주기 ms단위(1초 == 1000ms)
+const SdcardPath = android.os.Environment.getExternalStorageDirectory().getAbsolutePath();
 var powerManager = Api.getContext().getSystemService(Context.POWER_SERVICE);
 var wakelock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, scriptName);
 wakelock.acquire();//wakelock걸어버리깃!
 
 let db = null;
 let db2 = null;
+/**
+ * @author Hibot
+ * @license GPL3.0
+ * @see https://github.com/hui1601/libdream
+ */
+const dream_arr1 = ["adrp.ldrsh.ldnp", "ldpsw", "umax", "stnp.rsubhn", "sqdmlsl", "uqrshl.csel", "sqshlu", "umin.usubl.umlsl", "cbnz.adds", "tbnz", "usubl2", "stxr", "sbfx", "strh", "stxrb.adcs", "stxrh", "ands.urhadd", "subs", "sbcs", "fnmadd.ldxrb.saddl", "stur", "ldrsb", "strb", "prfm", "ubfiz", "ldrsw.madd.msub.sturb.ldursb", "ldrb", "b.eq", "ldur.sbfiz", "extr", "fmadd", "uqadd", "sshr.uzp1.sttrb", "umlsl2", "rsubhn2.ldrh.uqsub", "uqshl", "uabd", "ursra", "usubw", "uaddl2", "b.gt", "b.lt", "sqshl", "bics", "smin.ubfx", "smlsl2", "uabdl2", "zip2.ssubw2", "ccmp", "sqdmlal", "b.al", "smax.ldurh.uhsub", "fcvtxn2", "b.pl"],
+dream_arr2 = ["saddl", "urhadd", "ubfiz.sqdmlsl.tbnz.stnp", "smin", "strh", "ccmp", "usubl", "umlsl", "uzp1", "sbfx", "b.eq", "zip2.prfm.strb", "msub", "b.pl", "csel", "stxrh.ldxrb", "uqrshl.ldrh", "cbnz", "ursra", "sshr.ubfx.ldur.ldnp", "fcvtxn2", "usubl2", "uaddl2", "b.al", "ssubw2", "umax", "b.lt", "adrp.sturb", "extr", "uqshl", "smax", "uqsub.sqshlu", "ands", "madd", "umin", "b.gt", "uabdl2", "ldrsb.ldpsw.rsubhn", "uqadd", "sttrb", "stxr", "adds", "rsubhn2.umlsl2", "sbcs.fmadd", "usubw", "sqshl", "stur.ldrsh.smlsl2", "ldrsw", "fnmadd", "stxrb.sbfiz", "adcs", "bics.ldrb", "ldursb", "subs.uhsub", "ldurh", "uabd", "sqdmlal"];
+
+function dream(param){
+    return dream_arr1[param % 54] + "." + dream_arr2[(param + 31) % 57];
+}
 
 function toByteArray(bytes) {
 	let res = _Array.newInstance(_Byte.TYPE, bytes.length);
@@ -42,6 +55,7 @@ function toByteArray(bytes) {
 	}
 	return res;
 }
+/* END */
 function toCharArray(chars) {
 	return new _String(chars.map((e) => String.fromCharCode(e)).join("")).toCharArray();
 }
@@ -50,7 +64,7 @@ function decrypt(userId, enc, text) {
 	try {
 		let iv = toByteArray([15, 8, 1, 0, 25, 71, 37, -36, 21, -11, 23, -32, -31, 21, 12, 53]);
 		let password = toCharArray([22, 8, 9, 111, 2, 23, 43, 8, 33, 33, 10, 16, 3, 3, 7, 6]);
-		let prefixes = ["", "", "12", "24", "18", "30", "36", "12", "48", "7", "35", "40", "17", "23", "29", "isabel", "kale", "sulli", "van", "merry", "kyle", "james", "maddux", "tony", "hayden", "paul", "elijah", "dorothy", "sally", "bran", "extr.ursra"];//libdream.so참고
+		let prefixes = ["", "", "12", "24", "18", "30", "36", "12", "48", "7", "35", "40", "17", "23", "29", "isabel", "kale", "sulli", "van", "merry", "kyle", "james", "maddux", "tony", "hayden", "paul", "elijah", "dorothy", "sally", "bran", dream(0xcad63)];
 		let salt = new _String((prefixes[enc] + userId).slice(0, 16).padEnd(16, "\0")).getBytes("UTF-8");
 		let secretKeySpec = new SecretKeySpec(SecretKeyFactory.getInstance("PBEWITHSHAAND256BITAES-CBC-BC").generateSecret(new PBEKeySpec(password, salt, 2, 256)).getEncoded(), "AES");
 		let ivParameterSpec = new IvParameterSpec(iv);
@@ -62,9 +76,30 @@ function decrypt(userId, enc, text) {
 		return null;
 	}
 }
-function requirePermission() {
+function isDirectoryExists(path){
+	let f = new File(path);
+	return f.exists() && f.isDirectory()
+}
+function copyDB() {
 	try {
-		Runtime.getRuntime().exec(["su", "chmod -R 777 /data/data/" + package + "/databases"]);
+		if(!isDirectoryExists(SdcardPath + "/KakaoTalkDB")){
+			let f = new File(SdcardPath + "/KakaoTalkDB");
+			f.mkdir();
+		}
+		var cmd = new ArrayList();
+		cmd.add("su");
+		cmd.add("-c");
+		cmd.add("cp -R /data/data/" + KTPackage + "/databases/* " + SdcardPath + "/KakaoTalkDB/")
+		var ps = new ProcessBuilder(cmd);
+		ps.redirectErrorStream(true);
+		var pr = ps.start();
+		var in1 = new BufferedReader(new InputStreamReader(pr.getInputStream()));
+		var line;
+		while ((line = in1.readLine()) != null) {
+			Log.d(line);
+		}
+		pr.waitFor();
+		in1.close();
 		return true;
 	} catch (e) {
 		Log.error(e.lineNumber + ": " + e);
@@ -72,13 +107,13 @@ function requirePermission() {
 	}
 }
 function connectDB() {
-	requirePermission();
+	copyDB();
 	try {
-		var kakao1 = "/data/data/" + package + "/databases/KakaoTalk.db", kakao2 = "/data/data/" + package + "/databases/KakaoTalk.db";
+		var kakao1 = SdcardPath + "/KakaoTalkDB/KakaoTalk.db", kakao2 = SdcardPath + "/KakaoTalkDB/KakaoTalk2.db";
 		if(db != null) db.close();
 		if(db2 != null) db2.close();
-		db = SQLiteDatabase.openDatabase(kakao1, SQLiteDatabase.ENABLE_WRITE_AHEAD_LOGGING, 0);
-		db2 = SQLiteDatabase.openDatabase(kakao2, SQLiteDatabase.ENABLE_WRITE_AHEAD_LOGGING, 0);
+		db = SQLiteDatabase.openDatabase(kakao1, null, SQLiteDatabase.ENABLE_WRITE_AHEAD_LOGGING);
+		db2 = SQLiteDatabase.openDatabase(kakao2, null, SQLiteDatabase.ENABLE_WRITE_AHEAD_LOGGING);
 		return true;
 	} catch (e) {
 		Log.error(e.lineNumber + ": " + e);
@@ -87,7 +122,7 @@ function connectDB() {
 }
 function getRecentChatData(count) {
 	try {
-		let cursor = db.rawQuery("SELECT * FROM chat_logs", null);
+		let cursor = db.rawQuery("SELECT * FROM chat_logs ORDER BY created_at DESC LIMIT ?", [count]);
 		cursor.moveToLast();
 		let data = [];
 		while (count --) {
@@ -110,7 +145,7 @@ function getRecentChatData(count) {
 			];
 			for (let i = 0; i < columns.length; i ++) {
 				obj[columns[i]] = cursor.getString(i);
-				if (columns[i] == "v") {
+				if (columns[i] === "v" && obj[columns[i]] !== null) {
 					obj.v = JSON.parse(obj.v);
 				}
 			}
@@ -189,53 +224,20 @@ function getUserInfo(user_id, info) {
 			"new_badge_updated_at",
 			"new_badge_seen_at",
 			"status_action_token"
-		];
+		], decs = ["name", "profle_image_url", "full_profile_image_url", "original_profile_image_url", "status_message", "v", "contact_name"];
 		for (let i = 0; i < columns.length; i ++) {
 			data[columns[i]] = cursor.getString(i);
 		}
 		cursor.close();
-		switch(info){
-			case "_id": return data._id;
-			case "contact_id": return data.contact_id;
-			case "id": return data.id;
-			case "type": return data.type;
-			case "uuid": return data.uuid;
-			case "phone_number": return data.phone_number;
-			case "raw_phone_number": return data.raw_phone_number;
-			case "name": return decrypt(MY_KEY, data.enc, data.name);
-			case "phonetic_name": return data.phonetic_name;
-			case "profle_image_url": return decrypt(MY_KEY, data.enc, data.profle_image_url);
-			case "full_profile_image_url": return decrypt(MY_KEY, data.enc, data.full_profile_image_url);
-			case "original_profile_image_url": return decrypt(MY_KEY, data.enc, data.original_profile_image_url);
-			case "status_message": return decrypt(MY_KEY, data.enc, data.status_message);
-			case "chat_id": return data.chat_id;
-			case "brand_new": return data.brand_new;
-			case "blocked": return data.blocked;
-			case "favorite": return data.favorite;
-			case "position": return data.position;
-			case "v": return decrypt(MY_KEY, data.enc, data.v);
-			case "board_v": return data.board_v;
-			case "ext": return data.ext;
-			case "nick_name": return data.nick_name;
-			case "user_type": return data.user_type;
-			case "story_user_id": return data.story_user_id;
-			case "accout_id": return data.accout_id;
-			case "linked_services": return data.linked_services;
-			case "hidden": return data.hidden;
-			case "purged": return data.purged;
-			case "suspended": return data.suspended;
-			case "member_type": return data.member_type;
-			case "involved_chat_ids": return data.involved_chat_ids;
-			case "contact_name": return decrypt(MY_KEY, data.enc, data.contact_name);
-			case "enc": return data.enc;
-			case "created_at": return data.created_at;
-			case "new_badge_updated_at": return data.new_badge_updated_at;
-			case "new_badge_seen_at": return data.new_badge_seen_at;
-			case "status_action_token": return data.status_action_token;
-			default: throw "requsted Unknown info";
+		if(!columns.includes(info)) {
+			throw 'requsted unknown info';
 		}
+		if(decs.includes(info)) {
+			return decrypt(MY_KEY, data.enc, data[info]);
+		}
+		return data[info];
 	} catch (e) {
-		Log.error(e.lineNumber+": "+e);
+		Log.error(e.lineNumber + ": " + e);
 		return null;
 	}
 }
@@ -255,7 +257,7 @@ DatabaseWatcher.prototype = {
 							watcher.stop();
 							return;
 						}
-						if (connect_DB()) {
+						if (connectDB()) {
 							let count = DatabaseUtils.queryNumEntries(db, "chat_logs", null);
 							if (this.pre == null) {
 								Log.d("first execute");
@@ -267,7 +269,7 @@ DatabaseWatcher.prototype = {
 									let stack = getRecentChatData(change);
 									while (stack.length > 0) {
 										let obj = stack.pop();
-										obj.message = decrypt(obj.user_id, obj.v.enc, obj.message);
+										obj.message = decrypt(obj.user_id, obj.v.enc, "" + obj.message);
 										Log.d(obj.message);
 										let room = getRoomName(obj.chat_id);
 										let send_username = getUserInfo(obj.user_id, "name");
@@ -287,25 +289,24 @@ DatabaseWatcher.prototype = {
 											else Api.replyRoom(room, send_username + by + "강퇴하였습니다. 다음부턴 착하게 사세요!");
 										}
 										else if (obj.type == 26 && obj.message == "who") {
-											obj.attachment = new JSONObject(decrypt(obj.user_id, obj.v.enc, obj.attachment));
+											obj.attachment = new JSONObject(decrypt(obj.user_id, obj.v.enc, "" + obj.attachment));
 											let userid = obj.attachment.getString("src_userId");
 											Api.replyRoom(room, "이름: "+getUserInfo(userid, "name")
 											+"\n프로필 사진: "+getUserInfo(userid, "original_profile_image_url")
 											+"\n상태 메시지: "+getUserInfo(userid, "status_message"));
 										}
 										else if (obj.type == 26 && obj.message == "photolink") {
-											obj.attachment = new JSONObject(decrypt(obj.user_id, obj.v.enc, obj.attachment));
-											if(obj.attachment.get("src_type") != 2)
-											{
+											obj.attachment = new JSONObject(decrypt(obj.user_id, obj.v.enc, "" + obj.attachment));
+											if(obj.attachment.get("src_type") != 2) {
 												Api.replyRoom(room, "사진이 아닙니다!");
 												return;
 											}
-											let chat_id = obj.attachment.get("src_logId");
+											let chat_id = new _String(obj.attachment.get("src_logId"));
 											let cursor = db.rawQuery("SELECT * FROM chat_logs WHERE id=" + chat_id, null);
 											cursor.moveToNext();
 											let userId1=cursor.getString(4), msg1=cursor.getString(6);
 											cursor.close();
-											let photo = decrypt(userId1, getUserInfo(userId1, "enc"), msg1);
+											let photo = decrypt(userId1, getUserInfo(userId1, "enc"), "" + msg1);
 											photo = new JSONObject(photo);
 											Api.replyRoom(room, "링크: " + photo.get("url"));
 										}
