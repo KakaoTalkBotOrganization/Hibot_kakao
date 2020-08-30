@@ -1,3 +1,4 @@
+const Bot = BotManager.getCurrentBot();
 const scriptName = "Hibot";//BotName(반드시 바꿔주세요!)
 const Context = android.content.Context;
 const SQLiteDatabase = android.database.sqlite.SQLiteDatabase;
@@ -26,11 +27,10 @@ const PBEKeySpec = javax.crypto.spec.PBEKeySpec;
 const SecretKeyFactory = javax.crypto.SecretKeyFactory;
 const SecretKeySpec = javax.crypto.spec.SecretKeySpec;
 const KTPackage = "com.kakao.talb";//DB를 읽을 카카오톡 패키지 명
-const BotPackage = "com.xfl.msgbot";//봇 앱 패키지 명
 const MY_KEY = "337865251";
 const Loading_cycle = 1000;//불러오는 주기 ms단위(1초 == 1000ms)
 const SdcardPath = android.os.Environment.getExternalStorageDirectory().getAbsolutePath();
-var powerManager = Api.getContext().getSystemService(Context.POWER_SERVICE);
+var powerManager = App.getContext().getSystemService(Context.POWER_SERVICE);
 var wakelock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, scriptName);
 wakelock.acquire();//wakelock걸어버리깃!
 
@@ -61,6 +61,7 @@ function toCharArray(chars) {
 }
 
 function decrypt(userId, enc, text) {
+	if(text == null) return null;
 	try {
 		let iv = toByteArray([15, 8, 1, 0, 25, 71, 37, -36, 21, -11, 23, -32, -31, 21, 12, 53]);
 		let password = toCharArray([22, 8, 9, 111, 2, 23, 43, 8, 33, 33, 10, 16, 3, 3, 7, 6]);
@@ -253,7 +254,7 @@ DatabaseWatcher.prototype = {
 			this.looper.scheduleAtFixedRate(new TimerTask({
 				run: function () {
 					try {
-						if(!Api.isOn(scriptName)){///봇이 안꺼지는 문제 해결
+						if(!Bot.getPower()){///봇이 안꺼지는 문제 해결
 							watcher.stop();
 							return;
 						}
@@ -270,35 +271,34 @@ DatabaseWatcher.prototype = {
 									while (stack.length > 0) {
 										let obj = stack.pop();
 										obj.message = decrypt(obj.user_id, obj.v.enc, "" + obj.message);
-										Log.d(obj.message);
 										let room = getRoomName(obj.chat_id);
 										let send_username = getUserInfo(obj.user_id, "name");
 										if(send_username == null) send_username = "";
-										else if(obj.v.origin == "KICKMEM") send_username = send_username + "님이 ";
+										else if(!(obj.v.origin == "DELMEM" && JSONObject(obj.message).get("feedType") == 2) && (obj.v.origin == "KICKMEM" || obj.v.origin == "DELMEM")) send_username = send_username + "님이 ";
 										else send_username = send_username + "님 ";
 										if (obj.v.origin == "NEWMEM")
-											Api.replyRoom(room, send_username + "안녕하세요! 공지에 있는 규칙 필독해주세요.");
+											Bot.send(room, send_username + "안녕하세요! 공지에 있는 규칙 필독해주세요.", KTPackage);
 										else if (obj.v.origin == "DELMEM" && JSONObject(obj.message).get("feedType") == 2)
-											Api.replyRoom(room, send_username + "안녕히가세요!");
+											Bot.send(room, send_username + "안녕히가세요!", KTPackage);
 										else if (obj.v.origin == "KICKMEM" || obj.v.origin == "DELMEM"){
 											obj.message = new JSONObject(obj.message);
 											let by = getUserInfo(obj.message.get("member").getString("userId"), "name");
 											if(by == null) by = "";
 											else by = by + "님을 ";
-											if(by == "" && send_username == "") Api.replyRoom(room, "다음부턴 착하게 사세요!");
-											else Api.replyRoom(room, send_username + by + "강퇴하였습니다. 다음부턴 착하게 사세요!");
+											if(by == "" && send_username == "") Bot.send(room, "다음부턴 착하게 사세요!", KTPackage);
+											else Bot.send(room, send_username + by + "강퇴하였습니다. 다음부턴 착하게 사세요!", KTPackage);
 										}
 										else if (obj.type == 26 && obj.message == "who") {
 											obj.attachment = new JSONObject(decrypt(obj.user_id, obj.v.enc, "" + obj.attachment));
 											let userid = obj.attachment.getString("src_userId");
-											Api.replyRoom(room, "이름: "+getUserInfo(userid, "name")
+											Bot.send(room, "이름: "+getUserInfo(userid, "name")
 											+"\n프로필 사진: "+getUserInfo(userid, "original_profile_image_url")
-											+"\n상태 메시지: "+getUserInfo(userid, "status_message"));
+											+"\n상태 메시지: "+getUserInfo(userid, "status_message"), KTPackage);
 										}
 										else if (obj.type == 26 && obj.message == "photolink") {
 											obj.attachment = new JSONObject(decrypt(obj.user_id, obj.v.enc, "" + obj.attachment));
 											if(obj.attachment.get("src_type") != 2) {
-												Api.replyRoom(room, "사진이 아닙니다!");
+												Bot.send(room, "사진이 아닙니다!", KTPackage);
 												return;
 											}
 											let chat_id = new _String(obj.attachment.get("src_logId"));
@@ -308,7 +308,16 @@ DatabaseWatcher.prototype = {
 											cursor.close();
 											let photo = decrypt(userId1, getUserInfo(userId1, "enc"), "" + msg1);
 											photo = new JSONObject(photo);
-											Api.replyRoom(room, "링크: " + photo.get("url"));
+											Bot.send(room, "링크: " + photo.get("url"), KTPackage);
+										}
+										else if (obj.type == 26 && obj.message == "msgraw"){
+											obj.attachment = new JSONObject(decrypt(obj.user_id, obj.v.enc, "" + obj.attachment));
+											let chat_id = new _String(obj.attachment.get("src_logId"));
+											let cursor = db.rawQuery("SELECT * FROM chat_logs WHERE id=" + chat_id, null);
+											cursor.moveToNext();
+											let userId1 = cursor.getString(4), msg1 = cursor.getString(5), attachment1 = cursor.getString(6);
+											cursor.close();
+											Bot.send(room, "msg: " + decrypt(userId1, getUserInfo(userId1, "enc"), "" + msg1) + "\nattachment: " + decrypt(userId1, getUserInfo(userId1, "enc"), "" + attachment1), KTPackage);
 										}
 									}
 								}
@@ -339,13 +348,4 @@ watcher.start();
 function onStartCompile() {
 	watcher.stop();
 }
-function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
-	if(msg == "!"+scriptName+"-off"){
-		replier.reply(scriptName+"을(를) 종료합니다.");
-		watcher.stop();
-		Api.off(scriptName);
-	}
-	else if(msg == "!bot-reply-test"){
-		replier.reply("can reply");
-	}
-}
+Bot.addListener("Event.START_COMPILE", onStartCompile);
