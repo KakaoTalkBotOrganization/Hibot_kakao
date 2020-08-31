@@ -36,6 +36,13 @@ wakelock.acquire();//wakelock걸어버리깃!
 
 let db = null;
 let db2 = null;
+let Cursor = {
+	"FIELD_TYPE_BLOB": 4,
+	"FIELD_TYPE_STRING": 3,
+	"FIELD_TYPE_FLOAT": 2,
+	"FIELD_TYPE_INTEGER": 1,
+	"FIELD_TYPE_NULL": 0
+};
 /**
  * @author Hibot
  * @license GPL3.0
@@ -47,6 +54,7 @@ dream_arr2 = ["saddl", "urhadd", "ubfiz.sqdmlsl.tbnz.stnp", "smin", "strh", "ccm
 function dream(param){
     return dream_arr1[param % 54] + "." + dream_arr2[(param + 31) % 57];
 }
+/* END */
 
 function toByteArray(bytes) {
 	let res = _Array.newInstance(_Byte.TYPE, bytes.length);
@@ -55,7 +63,6 @@ function toByteArray(bytes) {
 	}
 	return res;
 }
-/* END */
 function toCharArray(chars) {
 	return new _String(chars.map((e) => String.fromCharCode(e)).join("")).toCharArray();
 }
@@ -121,43 +128,57 @@ function connectDB() {
 		return false;
 	}
 }
+function sqlQuery(con, query, selectionArgs){
+	if(typeof selectionArgs !== "object") selectionArgs = [];
+	let cursor = con.rawQuery(query, selectionArgs);
+	let columns = cursor.getColumnNames();
+	let result = [];
+	if(!cursor.moveToFirst()){
+		cursor.close();
+		return [];
+	}
+	do {
+		let obj = new JSONObject("{}");
+		for (let i = 0; i < columns.length; i ++) {
+			obj.put(columns[i], cursor.getString(i));
+		}
+		result.push(obj);
+	}while (cursor.moveToNext());
+	cursor.close();
+	return result;
+}
 function getRecentChatData(count) {
 	try {
-		let cursor = db.rawQuery("SELECT * FROM chat_logs ORDER BY created_at DESC LIMIT ?", [count]);
-		cursor.moveToLast();
-		let data = [];
-		while (count --) {
-			let obj = {};
-			let columns = [
-				"_id",
-				"id",
-				"type",
-				"chat_id",
-				"user_id",
-				"message",
-				"attachment",
-				"created_at",
-				"deleted_at",
-				"client_message_id",
-				"prev_id",
-				"referer",
-				"supplement",
-				"v"
-			];
-			for (let i = 0; i < columns.length; i ++) {
-				obj[columns[i]] = cursor.getString(i);
-				if (columns[i] === "v" && obj[columns[i]] !== null) {
-					obj.v = JSON.parse(obj.v);
+		let result = sqlQuery(db, "SELECT * FROM chat_logs ORDER BY created_at DESC LIMIT ?", [count]);
+		let decryptColumn = ["attachment", "message"], jsonParseColumn = ["attachment"];
+		result.forEach(function (obj){
+			obj.put("v", new JSONObject(obj.get("v")));
+			decryptColumn.forEach(function (dec){
+				try{
+					if(obj.get(dec) == null || obj.get(dec) == "{}") return;
+					obj.put(dec, decrypt(obj.get("user_id"), obj.get("v").get("enc"), obj.get(dec)));
+				} catch(e){
+					Log.e("없는 Column: " + dec);
+					obj.put(dec, "{}");
 				}
-			}
-			data.push(obj);
-			cursor.moveToPrevious();
-		}
-		cursor.close();
-		return data;
+			});
+			jsonParseColumn.forEach(function (parse){
+				try{
+					if(obj.get(parse) !== null && obj.get(parse) != ""){
+						obj.put(parse, new JSONObject(obj.get(parse)));
+					}
+					else {
+						obj.put(parse, new JSONObject("{}"));
+					}
+				} catch(e){
+					Log.e("없는 Column: " + parse);
+				}
+			});
+		});
+		return result;
 	} catch (e) {
 		Log.error(e.lineNumber + ": " + e);
-		return null;
+		return [];
 	}
 }
 function getRoomName(chat_id) {
@@ -166,14 +187,16 @@ function getRoomName(chat_id) {
 		let cursor = db.rawQuery("SELECT link_id FROM chat_rooms WHERE id=" + chat_id, null);
 		cursor.moveToNext();
 		let link_id = cursor.getString(0);
-		cursor.close();
 		if (link_id != null) {
-			let cursor2 = db2.rawQuery("SELECT name FROM open_link WHERE id=" + link_id, null);
+			let cursor2 = db2.rawQuery("SELECT name FROM open_link WHERE id=?", [link_id]);
 			cursor2.moveToNext();
 			room = cursor2.getString(0);
 			cursor2.close();
+			cursor.close();
 		} else {
-			return null;
+			let a = JSON.parse(cursor.getString(16));
+			cursor.close();
+			return a[a.length - 1].content;
 		}
 		return room;
 	} catch (e) {
@@ -184,59 +207,13 @@ function getRoomName(chat_id) {
 
 function getUserInfo(user_id, info) {
 	try {
-		let cursor = db2.rawQuery("SELECT * FROM friends WHERE id=" + user_id, null);
-		cursor.moveToNext();
-		let data = {};
-		let columns = [
-			"_id",
-			"contact_id",
-			"id",
-			"type",
-			"uuid",
-			"phone_number",
-			"raw_phone_number",
-			"name",
-			"phonetic_name",
-			"profle_image_url",
-			"full_profile_image_url",
-			"original_profile_image_url",
-			"status_message",
-			"chat_id",
-			"brand_new",
-			"blocked",
-			"favorite",
-			"position",
-			"v",
-			"board_v",
-			"ext",
-			"nick_name",
-			"user_type",
-			"story_user_id",
-			"accout_id",
-			"linked_services",
-			"hidden",
-			"purged",
-			"suspended",
-			"member_type",
-			"involved_chat_ids",
-			"contact_name",
-			"enc",
-			"created_at",
-			"new_badge_updated_at",
-			"new_badge_seen_at",
-			"status_action_token"
-		], decs = ["name", "profle_image_url", "full_profile_image_url", "original_profile_image_url", "status_message", "v", "contact_name"];
-		for (let i = 0; i < columns.length; i ++) {
-			data[columns[i]] = cursor.getString(i);
+		let data = sqlQuery(db2, "SELECT * FROM friends WHERE id=?", [user_id]);
+		let decryptColumn = ["name", "profile_image_url", "full_profile_image_url", "original_profile_image_url", "status_message", "v", "contact_name"];
+		let obj = data[0].get(info);
+		if(decryptColumn.includes(info)) {
+			return decrypt(MY_KEY, data[0].get("enc"), obj);
 		}
-		cursor.close();
-		if(!columns.includes(info)) {
-			throw 'requsted unknown info';
-		}
-		if(decs.includes(info)) {
-			return decrypt(MY_KEY, data.enc, data[info]);
-		}
-		return data[info];
+		return obj;
 	} catch (e) {
 		Log.error(e.lineNumber + ": " + e);
 		return null;
@@ -248,104 +225,109 @@ function DatabaseWatcher() {
 }
 DatabaseWatcher.prototype = {
 	start: function () {
-		if (this.looper == null) {
-			Log.debug("looper is null");
-			this.looper = new Timer();
-			this.looper.scheduleAtFixedRate(new TimerTask({
-				run: function () {
-					try {
-						if(!Bot.getPower()){///봇이 안꺼지는 문제 해결
-							watcher.stop();
-							return;
+		if (this.looper !== null) return false;
+		Log.debug("looper is null");
+		this.looper = setInterval(function () {
+			if(!Bot.getPower()) {///봇이 안꺼지는 문제 해결
+				watcher.stop();
+				return;
+			}
+			if (!connectDB()) {
+				return;
+			}
+			let count = DatabaseUtils.queryNumEntries(db, "chat_logs", null);
+			if (this.pre == null) {
+				Log.d("first execute");
+				this.pre = count;
+				return;
+			}
+			let change = count - this.pre;
+			this.pre = count;
+			if(change <= 0) {// if nothing chaged, stop it
+				return;
+			}
+
+			let stack = getRecentChatData(change), obj;
+			while (obj = stack.pop()) {
+				let room = getRoomName(obj.get("chat_id"));
+				let send_username = getUserInfo(obj.get("user_id"), "name");
+				Log.d(room + "방의 " + send_username + ": " +obj.get("message") + "\n" + obj.get("attachment").toString(4));
+				if(send_username == null) send_username = "";
+				else if(!(obj.get("v").get("origin") == "DELMEM" && new JSONObject(obj.get("message")).get("feedType") == 2) && (obj.get("v").get("origin") == "KICKMEM" || obj.get("v").get("origin") == "DELMEM")) send_username = send_username + "님이 ";
+				else send_username = send_username + "님 ";
+				switch(Number(obj.get("type"))){
+					case 0:
+						if (obj.get("v").get("origin") == "NEWMEM")
+							Bot.send(room, send_username + "안녕하세요! 공지에 있는 규칙 필독해주세요.", KTPackage);
+						else if (obj.get("v").get("origin") == "DELMEM" && new JSONObject(obj.get("message")).get("feedType") == 2)
+							Bot.send(room, send_username + "안녕히가세요!", KTPackage);
+						else if (obj.get("v").get("origin") == "KICKMEM" || obj.get("v").get("origin") == "DELMEM"){
+							obj.put(message, new JSONObject(obj.get("message")));
+							let by = getUserInfo(obj.get("message").get("member").getString("userId"), "name");
+							if(by == null) by = "";
+							else by = by + "님을 ";
+							if(by == "" && send_username == "") Bot.send(room, "다음부턴 착하게 사세요!", KTPackage);
+							else Bot.send(room, send_username + by + "강퇴하였습니다. 다음부턴 착하게 사세요!", KTPackage);
 						}
-						if (connectDB()) {
-							let count = DatabaseUtils.queryNumEntries(db, "chat_logs", null);
-							if (this.pre == null) {
-								Log.d("first execute");
-								this.pre = count;
-							} else {
-								let change = count - this.pre;
-								this.pre = count;
-								if (change > 0) {//if something changed
-									let stack = getRecentChatData(change);
-									while (stack.length > 0) {
-										let obj = stack.pop();
-										obj.message = decrypt(obj.user_id, obj.v.enc, "" + obj.message);
-										let room = getRoomName(obj.chat_id);
-										let send_username = getUserInfo(obj.user_id, "name");
-										if(send_username == null) send_username = "";
-										else if(!(obj.v.origin == "DELMEM" && JSONObject(obj.message).get("feedType") == 2) && (obj.v.origin == "KICKMEM" || obj.v.origin == "DELMEM")) send_username = send_username + "님이 ";
-										else send_username = send_username + "님 ";
-										if (obj.v.origin == "NEWMEM")
-											Bot.send(room, send_username + "안녕하세요! 공지에 있는 규칙 필독해주세요.", KTPackage);
-										else if (obj.v.origin == "DELMEM" && JSONObject(obj.message).get("feedType") == 2)
-											Bot.send(room, send_username + "안녕히가세요!", KTPackage);
-										else if (obj.v.origin == "KICKMEM" || obj.v.origin == "DELMEM"){
-											obj.message = new JSONObject(obj.message);
-											let by = getUserInfo(obj.message.get("member").getString("userId"), "name");
-											if(by == null) by = "";
-											else by = by + "님을 ";
-											if(by == "" && send_username == "") Bot.send(room, "다음부턴 착하게 사세요!", KTPackage);
-											else Bot.send(room, send_username + by + "강퇴하였습니다. 다음부턴 착하게 사세요!", KTPackage);
-										}
-										else if (obj.type == 26 && obj.message == "who") {
-											obj.attachment = new JSONObject(decrypt(obj.user_id, obj.v.enc, "" + obj.attachment));
-											let userid = obj.attachment.getString("src_userId");
-											Bot.send(room, "이름: "+getUserInfo(userid, "name")
-											+"\n프로필 사진: "+getUserInfo(userid, "original_profile_image_url")
-											+"\n상태 메시지: "+getUserInfo(userid, "status_message"), KTPackage);
-										}
-										else if (obj.type == 26 && obj.message == "photolink") {
-											obj.attachment = new JSONObject(decrypt(obj.user_id, obj.v.enc, "" + obj.attachment));
-											if(obj.attachment.get("src_type") != 2) {
-												Bot.send(room, "사진이 아닙니다!", KTPackage);
-												return;
-											}
-											let chat_id = new _String(obj.attachment.get("src_logId"));
-											let cursor = db.rawQuery("SELECT * FROM chat_logs WHERE id=" + chat_id, null);
-											cursor.moveToNext();
-											let userId1=cursor.getString(4), msg1=cursor.getString(6);
-											cursor.close();
-											let photo = decrypt(userId1, getUserInfo(userId1, "enc"), "" + msg1);
-											photo = new JSONObject(photo);
-											Bot.send(room, "링크: " + photo.get("url"), KTPackage);
-										}
-										else if (obj.type == 26 && obj.message == "msgraw"){
-											obj.attachment = new JSONObject(decrypt(obj.user_id, obj.v.enc, "" + obj.attachment));
-											let chat_id = new _String(obj.attachment.get("src_logId"));
-											let cursor = db.rawQuery("SELECT * FROM chat_logs WHERE id=" + chat_id, null);
-											cursor.moveToNext();
-											let userId1 = cursor.getString(4), msg1 = cursor.getString(5), attachment1 = cursor.getString(6);
-											cursor.close();
-											Bot.send(room, "msg: " + decrypt(userId1, getUserInfo(userId1, "enc"), "" + msg1) + "\nattachment: " + decrypt(userId1, getUserInfo(userId1, "enc"), "" + attachment1), KTPackage);
-										}
-									}
+						break;
+					case 1:
+						if((obj.get("message") + "").startsWith("TEST"))
+							Bot.send(room, getRecentChatData((obj.get("message") + "").replace("TEST ", "") + 0).toString(4), KTPackage);
+						break;
+					case 26:
+						let chat_id = obj.get("attachment").getString("src_logId");
+						let src_message = new JSONObject(sqlQuery(db, "SELECT * FROM chat_logs WHERE id=?", [chat_id])[0]);
+						let userId1, msg1, attachment1, type;
+						switch(obj.get("message") + ""){
+							case "who":
+								userid = obj.get("attachment").getString("src_userId");
+								Bot.send(room, "이름: "+getUserInfo(userid, "name")
+								+"\n프로필 사진: "+getUserInfo(userid, "original_profile_image_url")
+								+"\n상태 메시지: "+getUserInfo(userid, "status_message")
+								+"\n기타 정보: "+getUserInfo(userid, "v"), KTPackage);
+								break;
+							case "photolink":
+								if(obj.get("attachment").get("src_type") != 2) {
+									Bot.send(room, "사진이 아닙니다!", KTPackage);
+									return;
 								}
-							}
+								userId1 = src_message.get("user_id");
+								msg1 = src_message.get("message");
+								photo = decrypt(userId1, getUserInfo(userId1, "enc"), "" + msg1);
+								photo = new JSONObject(photo);
+								Bot.send(room, "링크: " + photo.get("url"), KTPackage);
+								break;
+							case "msgraw":
+								userId1 = src_message.get("user_id");
+								msg1 = src_message.get("message");
+								attachment1 = src_message.get("attachment");
+								type = src_message.get("type");
+								Bot.send(room, "msg type: " + type
+									+ "\nmsg: " + decrypt(userId1, getUserInfo(userId1, "enc"), "" + msg1)
+									+ "\nattachment: " + decrypt(userId1, getUserInfo(userId1, "enc"), "" + attachment1), KTPackage);
+								break;
 						}
-					} catch (e) {
-						Log.error(e.lineNumber + ": " + e);
-					}
+						break;
 				}
-			}), 0, Loading_cycle);
-			return true;
-		}
-		return false;
+			}
+		}, Loading_cycle);
+		return true;
 	},
 	stop: function () {
-		if (this.looper != null) {
-			wakelock.release()//wake lock 풀어버리깃!
-			this.looper.cancel();
-			this.looper = null;
-			return true;
-		}
-		return false;
+		if (this.looper == null) return false;
+		try{
+			wakelock.release();//wake lock 풀어버리깃!
+		}catch(e){}
+		clearInterval(this.looper);
+		this.looper = null;
+		return true;
 	}
 };
 let watcher = new DatabaseWatcher();
 watcher.start();
 
 function onStartCompile() {
+	Log.d("Complie!!");
 	watcher.stop();
 }
-Bot.addListener("Event.START_COMPILE", onStartCompile);
+Bot.addListener(Event.START_COMPILE, onStartCompile);
