@@ -315,9 +315,9 @@ DatabaseWatcher.prototype = {
 											let chat_id = new _String(obj.attachment.get("src_logId"));
 											let cursor = db.rawQuery("SELECT * FROM chat_logs WHERE id=" + chat_id, null);
 											cursor.moveToNext();
-											let userId1 = cursor.getString(4), msg1 = cursor.getString(5), attachment1 = cursor.getString(6);
+											let userId1 = cursor.getString(4), msg1 = cursor.getString(5), attachment1 = cursor.getString(6), type = cursor.getString(2);
 											cursor.close();
-											Bot.send(room, "msg: " + decrypt(userId1, getUserInfo(userId1, "enc"), "" + msg1) + "\nattachment: " + decrypt(userId1, getUserInfo(userId1, "enc"), "" + attachment1), KTPackage);
+											Bot.send(room, "msg type: " + type + "\nmsg: " + decrypt(userId1, getUserInfo(userId1, "enc"), "" + msg1) + "\nattachment: " + decrypt(userId1, getUserInfo(userId1, "enc"), "" + attachment1), KTPackage);
 										}
 									}
 								}
