@@ -32,7 +32,7 @@ const Loading_cycle = 1000;//불러오는 주기 ms단위(1초 == 1000ms)
 const SdcardPath = android.os.Environment.getExternalStorageDirectory().getAbsolutePath();
 var powerManager = App.getContext().getSystemService(Context.POWER_SERVICE);
 var wakelock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, scriptName);
-wakelock.acquire();//wakelock걸어버리깃!
+wakelock.acquire();//wakelock걸기!
 
 let db = null;
 let db2 = null;
@@ -101,13 +101,7 @@ function copyDB() {
 		var ps = new ProcessBuilder(cmd);
 		ps.redirectErrorStream(true);
 		var pr = ps.start();
-		var in1 = new BufferedReader(new InputStreamReader(pr.getInputStream()));
-		var line;
-		while ((line = in1.readLine()) != null) {
-			Log.d(line);
-		}
 		pr.waitFor();
-		in1.close();
 		return true;
 	} catch (e) {
 		Log.error(e.lineNumber + ": " + e);
