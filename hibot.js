@@ -56,13 +56,6 @@ function toCharArray(chars) {
 
 function decrypt(userId, enc, text) {
 	if(text == null) return null;
-	if(typeof decrypt.isFirst === 'undefined'){
-		decrypt.iv = toByteArray([15, 8, 1, 0, 25, 71, 37, -36, 21, -11, 23, -32, -31, 21, 12, 53]);
-		decrypt.password = toCharArray([22, 8, 9, 111, 2, 23, 43, 8, 33, 33, 10, 16, 3, 3, 7, 6]);
-		decrypt.prefixes = ['', '', '12', '24', '18', '30', '36', '12', '48', '7', '35', '40', '17', '23', '29', 'isabel', 'kale', 'sulli', 'van', 'merry', 'kyle', 'james', 'maddux', 'tony', 'hayden', 'paul', 'elijah', 'dorothy', 'sally', 'bran', dream(0xcad63)];
-		decrypt.cipher = javax.crypto.Cipher.getInstance('AES/CBC/PKCS5Padding');
-		decrypt.isFirst = false;
-	}
 	try {
 		decrypt.cipher.init(2, new javax.crypto.spec.SecretKeySpec(javax.crypto.SecretKeyFactory.getInstance('PBEWITHSHAAND256BITAES-CBC-BC').generateSecret(new javax.crypto.spec.PBEKeySpec(decrypt.password, new _String((decrypt.prefixes[enc] + userId).slice(0, 16).padEnd(16, '\0')).getBytes('UTF-8'), 2, 256)).getEncoded(), 'AES'), new javax.crypto.spec.IvParameterSpec(decrypt.iv));
 		return '' + new _String(decrypt.cipher.doFinal(java.util.Base64.getDecoder().decode(text)), 'UTF-8');
@@ -71,6 +64,10 @@ function decrypt(userId, enc, text) {
 		return null;
 	}
 }
+decrypt.iv = toByteArray([15, 8, 1, 0, 25, 71, 37, -36, 21, -11, 23, -32, -31, 21, 12, 53]);
+decrypt.password = toCharArray([22, 8, 9, 111, 2, 23, 43, 8, 33, 33, 10, 16, 3, 3, 7, 6]);
+decrypt.prefixes = ['', '', '12', '24', '18', '30', '36', '12', '48', '7', '35', '40', '17', '23', '29', 'isabel', 'kale', 'sulli', 'van', 'merry', 'kyle', 'james', 'maddux', 'tony', 'hayden', 'paul', 'elijah', 'dorothy', 'sally', 'bran', dream(0xcad63)];
+decrypt.cipher = javax.crypto.Cipher.getInstance('AES/CBC/PKCS5Padding');
 function isDirectoryExists(path){
 	let f = new File(path);
 	return f.exists() && f.isDirectory()
